@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulador de Evaluación Docente</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+        }
+        button {
+            font-family: inherit;
+        }
+        .app {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 0 16px 80px;
+        }
+        /* start screen */
+        .start-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2440 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .start-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 32px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .start-card h1 {
+            color: #1e3a5f;
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0 0 6px;
+        }
+        .start-card .sub {
+            color: #5a7a9c;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .info-box {
+            background: #f0f6ff;
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 28px;
+            text-align: left;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #dde8f7;
+            font-size: 13px;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-row .label {
+            color: #5a7a9c;
+        }
+        .info-row .value {
+            color: #1e3a5f;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-primary:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        /* header */
+        .header {
+            background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        .header-inner {
+            max-width: 820px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .header .item-id {
+            color: #fff;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .header .item-id span {
+            color: #93c5fd;
+            font-size: 13px;
+        }
+        .header .timer {
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-weight: 800;
+            font-size: 16px;
+            color: #fff;
+            letter-spacing: 1px;
+            transition: background 0.3s;
+        }
+        .header .answered {
+            color: #93c5fd;
+            font-size: 13px;
+        }
+        .progress-bar {
+            max-width: 820px;
+            margin: 6px auto 0;
+            background: #ffffff30;
+            border-radius: 4px;
+            height: 4px;
+        }
+        .progress-fill {
+            background: #60a5fa;
+            height: 4px;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        /* navigation grid */
+        .nav-grid {
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .nav-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #e2e8f0;
+            color: #475569;
+            border: 2px solid transparent;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-btn.current {
+            border-color: #2563eb;
+        }
+        .nav-btn.flagged {
+            border-color: #f59e0b;
+        }
+        .nav-btn.answered-correct {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .nav-btn.answered-wrong {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+        /* question card */
+        .q-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 20px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .q-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .flag-btn {
+            background: #f1f5f9;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .flag-btn.active {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        .q-text {
+            color: #1e293b;
+            font-size: 15px;
+            line-height: 1.75;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+        .opt-btn {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.6;
+        }
+        .opt-btn:last-child {
+            margin-bottom: 0;
+        }
+        .opt-btn .letter {
+            border-radius: 6px;
+            min-width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+            background: #e2e8f0;
+            color: #64748b;
+        }
+        .opt-btn.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+        .opt-btn.selected .letter {
+            background: #3b82f6;
+            color: #fff;
+        }
+        .opt-btn.revealed-correct {
+            background: #f0fff4;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        .opt-btn.revealed-correct .letter {
+            background: #10b981;
+            color: #fff;
+        }
+        .opt-btn.revealed-wrong {
+            background: #fff5f5;
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+        .opt-btn.revealed-wrong .letter {
+            background: #ef4444;
+            color: #fff;
+        }
+        .justification-box {
+            background: #fffbeb;
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 16px;
+        }
+        .justification-box strong {
+            display: block;
+            color: #92400e;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .justification-box p {
+            color: #78350f;
+            font-size: 13px;
+            line-height: 1.7;
+            margin: 0;
+        }
+        .nav-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+        .nav-actions button {
+            flex: 1;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+        .nav-actions .prev {
+            background: #fff;
+            color: #1e3a5f;
+            border: 1.5px solid #cbd5e1;
+        }
+        .nav-actions .prev:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .nav-actions .next {
+            background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+            color: #fff;
+        }
+        .nav-actions .finish {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: #fff;
+        }
+        /* result screen */
+        .result-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2440 100%);
+            padding: 32px 16px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .result-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .result-card h2 {
+            color: #1e3a5f;
+            font-size: 24px;
+            font-weight: 800;
+            margin: 4px 0;
+        }
+        .result-card .sub {
+            color: #5a7a9c;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .score-box {
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 2px solid #10b981;
+            background: #f0fff4;
+        }
+        .score-box.fail {
+            border-color: #ef4444;
+            background: #fff5f5;
+        }
+        .score-box .big {
+            font-size: 52px;
+            font-weight: 800;
+        }
+        .score-box .big.pass {
+            color: #059669;
+        }
+        .score-box .big.fail {
+            color: #dc2626;
+        }
+        .score-box .label {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .score-bar {
+            background: #e2e8f0;
+            border-radius: 8px;
+            height: 10px;
+            margin: 12px auto;
+            max-width: 240px;
+            overflow: hidden;
+        }
+        .score-bar .fill {
+            height: 10px;
+            border-radius: 8px;
+            width: 0%;
+            transition: width 1s;
+        }
+        .result-card .restart-btn {
+            background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .review-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .review-item {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 5px solid #94a3b8;
+        }
+        .review-item.correct {
+            border-left-color: #10b981;
+        }
+        .review-item.wrong {
+            border-left-color: #ef4444;
+        }
+        .review-item .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .review-item .row .qid {
+            color: #1e3a5f;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .review-item .row .tag {
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .tag.correct {
+            background: #10b981;
+        }
+        .tag.wrong {
+            background: #ef4444;
+        }
+        .tag.unanswered {
+            background: #94a3b8;
+        }
+        .review-item .qtext {
+            color: #334155;
+            font-size: 13px;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .review-opt {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 6px 10px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid transparent;
+        }
+        .review-opt .lbl {
+            font-weight: 700;
+            min-width: 20px;
+        }
+        .review-opt.right {
+            background: #f0fff4;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        .review-opt.wrong {
+            background: #fff5f5;
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+        .review-opt.neutral {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: #475569;
+        }
+        .review-just {
+            background: #fffbeb;
+            border: 1.5px solid #fbbf24;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 8px;
+        }
+        .review-just strong {
+            font-weight: 700;
+            color: #92400e;
+            font-size: 12px;
+        }
+        .review-just span {
+            color: #78350f;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        @media (max-width: 500px) {
+            .start-card { padding: 28px 16px; }
+            .q-card { padding: 16px; }
+            .header-inner { flex-wrap: wrap; justify-content: center; }
+            .nav-actions { flex-direction: column; }
+            .nav-actions button { flex: none; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+			(function() {
+            // ------------------------ DATA ---------------------------------
+            const TOTAL_TIME = 90 * 60; // 90 min
+            const TOTAL_POINTS = 20;
+
+            const questions = [
+                { id: 1, text: "Durante un proyecto interdisciplinario, el docente observa desacuerdos recurrentes entre dos estudiantes respecto a la organización de tareas, la toma de decisiones y la distribución de responsabilidades. Ambos defienden sus puntos de vista de forma rígida, generando interrupciones y una progresiva fragmentación del trabajo grupal. Considerando la necesidad de fortalecer la convivencia, la corresponsabilidad y la colaboración efectiva, ¿cuál sería la intervención docente más pertinente?", options: ["Implementar estrategias de mediación docente centradas en la intervención directa en el conflicto, facilitando espacios de diálogo entre los estudiantes involucrados.", "Implementar estrategias de acompañamiento al trabajo colaborativo, centradas en la estructuración de normas de interacción y pautas para la toma de decisiones.", "Implementar estrategias de aprendizaje cooperativo centradas en la enseñanza explícita de habilidades de interacción, la regulación de conflictos y la toma de decisiones compartidas, integrando normas construidas colectivamente, roles interdependientes y espacios de reflexión sobre la dinámica grupal.", "Implementar estrategias de reorganización del trabajo grupal centradas en la redistribución de tareas."], correct: 2, justification: "La respuesta correcta es la C porque aborda de forma integral las causas del conflicto: enseña explícitamente habilidades de interacción, promueve la toma de decisiones compartida, construye normas colectivamente e incorpora roles interdependientes. Las otras opciones son parciales: A solo media el conflicto puntual; B estructura normas pero no enseña habilidades; D reorganiza tareas sin trabajar las relaciones." },
+                { id: 2, text: "En distintas asignaturas, el docente ofrece retroalimentación mediante comentarios generales como 'bien', 'debes esforzarte más' o 'puedes mejorar'. Sin embargo, observa que estos mensajes no generan cambios significativos en el desempeño: los estudiantes repiten errores y no logran relacionar la retroalimentación con acciones concretas. El docente reconoce que esta práctica limita la autorregulación y la mejora autónoma. ¿Qué enfoque resultaría más adecuado?", options: ["Desarrollar una retroalimentación descriptiva centrada en reconocer avances y señalar aspectos a fortalecer, incorporando referencias a criterios previamente trabajados.", "Desarrollar una retroalimentación centrada en la definición de próximos pasos de aprendizaje, ofreciendo orientaciones claras y accionables sobre qué debe mejorar, cómo hacerlo y en qué aspectos enfocarse, de modo que el estudiante pueda aplicar estos criterios de manera consciente en sus futuras tareas.", "Desarrollar una retroalimentación centrada en la orientación mediante sugerencias de mejora, incorporando ejemplos y recomendaciones que guíen al estudiante en el ajuste de su desempeño.", "Desarrollar una retroalimentación centrada en la identificación de errores frecuentes, señalando con precisión las dificultades observadas en las tareas."], correct: 1, justification: "La respuesta correcta es la B porque es la única que ofrece una retroalimentación accionable y orientada al aprendizaje futuro: define qué mejorar, cómo hacerlo y en qué enfocarse, promoviendo la autonomía. A es descriptiva pero no orienta la acción; C da sugerencias generales; D solo identifica errores sin guiar cómo corregirlos." },
+                { id: 3, text: "La profesora observa que, durante los proyectos grupales, su grupo muestra un bajo nivel de compromiso: algunos estudiantes cumplen de manera mínima, otros delegan en sus compañeros los pasos del proyecto. Aunque se cumplen los objetivos, no se evidencia apropiación de los aprendizajes ni entusiasmo por el trabajo colaborativo. Lucía desea rediseñar su enfoque para aumentar la motivación y fortalecer la colaboración. ¿Qué acción pedagógica permitiría incrementar el sentido de propósito del proyecto y favorecer una colaboración más auténtica entre los estudiantes?", options: ["El docente define objetivos de aprendizaje a partir de los contenidos del currículo oficial, priorizando su organización secuencial y su alineación con los estándares, de manera que orienten con precisión la planificación y la evaluación del proceso de enseñanza.", "El docente define objetivos de aprendizaje a partir de los contenidos del currículo oficial, priorizando su organización secuencial y la cobertura del programa, y los configura como orientadores de la movilización integrada de conocimientos, habilidades y actitudes en situaciones significativas y contextualizadas, promoviendo procesos de aprendizaje con sentido y transferibles a distintos escenarios.", "El docente define objetivos de aprendizaje a partir de los contenidos del currículo oficial, priorizando su organización secuencial y la cobertura del programa, formulando metas compartidas que incorporan la diversidad de intereses, ritmos y contextos del grupo.", "El docente define objetivos priorizando el currículo oficial y la alineación con estándares, con énfasis en la planificación y evaluación del proceso."], correct: 1, justification: "La respuesta correcta es la B porque conecta los objetivos curriculares con situaciones significativas y contextualizadas, promoviendo la movilización integrada de conocimientos, habilidades y actitudes. Esto da sentido y propósito al proyecto. Las demás opciones priorizan la cobertura curricular o los estándares sin vincularlos a experiencias que generen motivación y colaboración auténtica." },
+                { id: 4, text: "Durante el desarrollo de la competencia escritora, el docente observa que los estudiantes pueden elaborar oraciones y párrafos breves, pero presentan dificultades para organizar las ideas en una secuencia narrativa coherente. Algunos escriben sin planificar, mientras que otros tienen dificultades para iniciar o revisar sus textos. Esta situación limita la calidad de las producciones y evidencia la necesidad de fortalecer los procesos de autorregulación. El docente busca una intervención que acompañe la escritura como un proceso que incluye planificación, textualización y revisión, respetando la diversidad de ritmos y estilos de aprendizaje. ¿Qué pasos didácticos permitirían orientar este proceso de manera efectiva?", options: ["Presentar ejemplos de cuentos ya terminados y pedir que los estudiantes identifiquen sus partes; luego, asignar la escritura del cuento de forma individual siguiendo el modelo, con una corrección final del docente.", "Pedirles que libremente escriban un cuento como les parezca y luego lo lean para que los demás den sus impresiones. Corregir ortografía.", "Modelar la estructura con un minicuento, usar un organizador gráfico y dar tiempo de escritura independiente con apoyos puntuales; finalizar con una revisión sencilla.", "Explicar la estructura del cuento con una lámina resumen y proporcionar una plantilla fija para que todos completen el mismo esquema narrativo, revisando al final si cumplieron los pasos establecidos."], correct: 2, justification: "La respuesta correcta es la C porque integra las tres fases del proceso de escritura: modelado (planificación), uso de organizador gráfico (textualización con apoyo) y revisión final. Respeta la diversidad al ofrecer apoyos puntuales. A solo muestra el producto final sin acompañar el proceso; B es libre sin estructura; D impone una plantilla rígida que no favorece la autonomía." },
+                { id: 5, text: "Un docente de primaria necesita diseñar una actividad de cierre del primer período que evidencie los aprendizajes logrados por sus estudiantes. Busca una estrategia que no se limite a la repetición de contenidos, sino que permita observar la aplicación de saberes en situaciones significativas, la integración de conocimientos, habilidades y actitudes, y el desempeño en contextos cercanos a la realidad del estudiantado. ¿Qué estrategia metodológica resultaría más adecuada para evidenciar aprendizajes de manera auténtica y alineada con el enfoque por competencias?", options: ["Implementar una estrategia metodológica de cierre centrada en el planteamiento de una situación integradora, en la que los estudiantes articulen distintos aprendizajes mediante la resolución de una tarea contextualizada o la elaboración de un producto, incorporando referentes de evaluación y momentos de revisión del proceso y de los resultados obtenidos.", "Implementar una estrategia metodológica de cierre centrada en la elaboración de productos académicos integradores, como informes, presentaciones o portafolios.", "Implementar una estrategia metodológica de cierre centrada en el desarrollo de actividades colaborativas de síntesis, en las que los estudiantes trabajen en equipos para analizar situaciones problemáticas.", "Implementar una estrategia metodológica de cierre centrada en la resolución de ejercicios de repaso secuenciados."], correct: 0, justification: "La respuesta correcta es la A porque propone una situación integradora contextualizada con evaluación del proceso y los resultados, alineada al enfoque por competencias. Permite observar la aplicación real de saberes. B y C son parcialmente válidas pero no incluyen todos los elementos (evaluación del proceso, referentes explícitos). D es solo repaso, no auténtica evaluación por competencias." },
+                { id: 6, text: "Al aplicar una evaluación diagnóstica, el docente identifica que gran parte del grupo presenta vacíos en conocimientos previos esenciales para abordar los nuevos contenidos. Los resultados muestran desempeños heterogéneos. Continuar con la planificación original podría limitar el desarrollo de aprendizajes más complejos. El docente busca ajustar su enseñanza sin reducir las expectativas curriculares. ¿Qué decisión de planificación sería más adecuada para garantizar la progresión de los aprendizajes y el desarrollo de competencias?", options: ["Redefinir los objetivos de aprendizaje, priorizando contenidos fundamentales de menor complejidad, con el fin de asegurar que la mayoría del grupo alcance aprendizajes básicos.", "Mantener la planificación original, incorporando actividades de refuerzo paralelas para los estudiantes con mayores dificultades.", "Ajustar la planificación mediante un enfoque de progresión articulada que integre la recuperación de saberes previos en el desarrollo de los nuevos contenidos, a través de tareas complejas y contextualizadas, el uso de andamiajes diferenciados, agrupamientos flexibles y estrategias metacognitivas.", "Reorganizar la secuencia didáctica incorporando un módulo inicial de revisión de contenidos previos."], correct: 2, justification: "La respuesta correcta es la C porque integra la recuperación de saberes previos dentro del desarrollo de nuevos contenidos, usando andamiajes diferenciados y estrategias metacognitivas. Mantiene las expectativas curriculares sin reducirlas. A baja las expectativas; B mantiene el plan original sin ajuste real; D solo añade un módulo de repaso aislado." },
+                { id: 7, text: "En una secuencia de lectura comprensiva, el docente observa que muchos estudiantes identifican de manera incorrecta las ideas principales y secundarias, subrayan información sin criterios claros y tienen dificultades para comprender la función de los conectores. Aunque la fluidez lectora es adecuada, la comprensión sigue siendo superficial. El docente reconoce la necesidad de desarrollar estrategias metacognitivas y criterios de análisis más sólidos. ¿Qué acción pedagógica permitiría fortalecer de manera progresiva una lectura más estratégica, reflexiva y fundamentada?", options: ["Implementar estrategias de mediación lectora centradas en la organización de la información textual, incorporando organizadores gráficos, esquemas y actividades de clasificación que permitan diferenciar ideas principales, secundarias y ejemplos.", "Implementar estrategias de mediación lectora que integren organizadores gráficos y actividades de análisis textual para distinguir ideas principales, relaciones lógicas y funciones de los conectores.", "Implementar estrategias de mediación lectora centradas en el análisis guiado de textos mediante preguntas orientadoras y metacognitivas, promoviendo la discusión sobre la relevancia de la información, la función de los conectores y la relación entre ideas.", "Implementar estrategias de mediación lectora centradas en la explicitación de criterios de análisis textual y en el desarrollo de procesos metacognitivos, incorporando modelado parcial, construcción compartida de referentes y apoyos para orientar la toma de decisiones durante la lectura."], correct: 3, justification: "La respuesta correcta es la D porque combina la explicitación de criterios de análisis, el desarrollo metacognitivo, el modelado parcial y la construcción compartida de referentes. Es el enfoque más completo para fortalecer la comprensión lectora estratégica. A y B solo usan organizadores gráficos sin profundizar en metacognición; C es más reflexiva pero no incluye modelado ni construcción compartida." },
+                { id: 8, text: "En una comunidad rural con acceso limitado a internet y escasez de materiales actualizados, el docente identifica que varias actividades curriculares dependen de recursos digitales difíciles de utilizar en su contexto. El grupo presenta diversidad en autonomía, acceso a dispositivos y experiencia tecnológica. El docente busca reconfigurar su planificación sin reducir la complejidad de los aprendizajes esperados ni abandonar el enfoque por competencias. ¿Qué ajuste curricular resultaría más pertinente para garantizar el desarrollo de competencias en este contexto?", options: ["Desarrollar un ajuste curricular centrado en la reconfiguración de las experiencias de aprendizaje desde el enfoque por competencias, manteniendo los aprendizajes esperados y la intencionalidad pedagógica, pero diversificando los medios, contextos y recursos a partir del entorno disponible.", "Desarrollar un ajuste curricular centrado en la adaptación de actividades mediante el uso de recursos disponibles en el entorno, incorporando materiales concretos y ejemplos de la vida cotidiana.", "Desarrollar un ajuste curricular centrado en la reducción de contenidos y actividades digitales, priorizando aquellos aprendizajes que puedan abordarse con los recursos disponibles en el aula.", "Desarrollar un ajuste curricular centrado en la sustitución de recursos digitales por recursos impresos."], correct: 0, justification: "La respuesta correcta es la A porque mantiene los aprendizajes esperados y la intencionalidad pedagógica del enfoque por competencias, pero diversifica los medios y recursos usando lo disponible en el entorno. No reduce la complejidad. B usa recursos del entorno pero sin garantizar el nivel de competencias; C y D reducen o sustituyen sin mantener el enfoque." },
+                { id: 9, text: "Con el propósito de enriquecer las experiencias de aprendizaje, un docente incorpora recursos digitales como videos, presentaciones multimedia y plataformas interactivas. Sin embargo, observa que no todos los estudiantes acceden a estos recursos en igualdad de condiciones. Algunos presentan dificultades relacionadas con sus necesidades de aprendizaje o con características poco accesibles de los materiales. Además, las actividades privilegian formas limitadas de representación y participación, generando brechas en la comprensión y la autonomía. Considerando un enfoque inclusivo basado en accesibilidad y equidad, ¿qué estrategia pedagógica resultaría más pertinente?", options: ["Implementar una estrategia de diversificación de los formatos de acceso a la información, integrando plataformas digitales interactivas, recursos auditivos, materiales visuales estructurados y alternativas no digitales, de manera articulada, para ofrecer múltiples formas de representación y participación.", "Implementar una estrategia de diversificación de los formatos de acceso a la información, integrando plataformas digitales interactivas, algunos materiales adaptados y recursos visuales, manteniendo una planificación común para el grupo y previendo alternativas no digitales equivalentes.", "Implementar una estrategia de diversificación de los formatos de acceso a la información, integrando plataformas digitales interactivas, recursos auditivos y materiales visuales estructurados, junto con dinámicas de apoyo entre pares.", "Implementar una estrategia centrada en el uso predominante de recursos impresos y explicaciones orales, incorporando herramientas digitales de forma complementaria."], correct: 0, justification: "La respuesta correcta es la A porque ofrece múltiples formas de representación y participación de manera articulada, incorporando recursos auditivos, visuales y no digitales. Es la respuesta más completa y alineada al Diseño Universal para el Aprendizaje (DUA). B y C son parciales; D invierte la prioridad y no garantiza la equidad en el acceso." },
+                { id: 10, text: "En el marco del sistema educativo dominicano, el docente reconoce la diversidad de condiciones sociales, culturales y de aprendizaje de su grupo. Al revisar su práctica, busca garantizar que todos los estudiantes accedan a oportunidades reales de aprendizaje, evitando enfoques homogéneos que puedan reproducir desigualdades. ¿Qué práctica docente se alinea con el principio de equidad educativa y promueve la inclusión, la pertinencia y el desarrollo de competencias en todos los estudiantes?", options: ["Adaptar la enseñanza y la evaluación según la evaluación diagnóstica y las necesidades del grupo, incorporando apoyos diferenciados y ajustes razonables para garantizar oportunidades reales de aprendizaje.", "Adaptar las estrategias de enseñanza y evaluación a partir de la evaluación diagnóstica, incorporando apoyos generales y oportunidades de participación variadas dentro de una planificación común.", "Priorizar el reconocimiento del esfuerzo individual y la participación, valorando las propuestas del estudiantado y reduciendo la corrección de errores para preservar la motivación.", "Aplicar el mismo enfoque metodológico y los mismos criterios de evaluación para todo el grupo, bajo el principio de trato igualitario, evitando ajustes diferenciados."], correct: 0, justification: "La respuesta correcta es la A porque combina la evaluación diagnóstica con apoyos diferenciados y ajustes razonables, garantizando oportunidades reales para todos. Esto es el núcleo de la equidad educativa. B es más general y no menciona ajustes razonables; C prioriza el esfuerzo pero descuida el aprendizaje efectivo; D aplica uniformidad que reproduce desigualdades." },
+                { id: 11, text: "Un estudiante presenta dificultades persistentes de aprendizaje junto con problemas de integración social que afectan su participación y bienestar en el aula. El docente reconoce que la situación requiere una intervención más amplia que el trabajo individual en clase, que involucre a otros actores de la comunidad educativa. Busca articular acciones que integren apoyo pedagógico, acompañamiento socioemocional y seguimiento continuo. ¿Qué estrategia de trabajo colaborativo con la comunidad educativa permitiría brindar un apoyo integral, asegurando la coherencia en las acciones y una mejora sostenida en el desarrollo del estudiante?", options: ["Desarrollar estrategias de intervención pedagógica inicial en el aula, documentando evidencias de avance y, de persistir las dificultades, gestionar la derivación al equipo de orientación.", "Establecer comunicación con la familia para recoger información contextual y conocer las estrategias implementadas previamente, integrando estos insumos en la toma de decisiones pedagógicas dentro del aula.", "Remitir formalmente la situación al equipo de orientación y a la dirección del centro, activando los protocolos institucionales correspondientes.", "Coordinar intercambios con el equipo de orientación, la familia y docentes vinculados al estudiante, a fin de acordar estrategias compartidas que favorezcan su desempeño académico y su participación en la dinámica escolar."], correct: 3, justification: "La respuesta correcta es la D porque coordina a todos los actores clave (equipo de orientación, familia y docentes) para acordar estrategias compartidas que aseguren coherencia y seguimiento continuo. Es el enfoque más integral. A actúa solo en el aula; B solo consulta a la familia; C solo deriva sin coordinar acciones conjuntas." },
+                { id: 12, text: "En un aula de primaria, un estudiante con discapacidad visual enfrenta dificultades para acceder a información presentada principalmente en textos impresos, consignas en la pizarra y fichas de trabajo. El docente reconoce la necesidad de superar estrategias meramente compensatorias y garantizar un acceso directo y equitativo a los contenidos. ¿Qué adaptación pedagógica resultaría más pertinente?", options: ["Implementar estrategias de adaptación centradas en el uso de los mismos materiales con ajustes puntuales de acceso, promoviendo que el estudiante desarrolle estrategias propias para interactuar con el contenido.", "Implementar estrategias de adaptación centradas en la flexibilización de las actividades y de las formas de participación, priorizando tareas alternativas que permitan al estudiante demostrar la comprensión de los contenidos a través de distintos canales.", "Implementar estrategias de adaptación centradas en la diversificación de los formatos de acceso a la información, integrando de manera sistemática recursos auditivos, materiales accesibles y herramientas tecnológicas de apoyo que permitan al estudiante interactuar directamente con los contenidos, favoreciendo su autonomía, participación y acceso equitativo a las actividades del aula.", "Implementar estrategias de adaptación centradas en la asignación de apoyos entre pares durante el desarrollo de las actividades, incorporando la figura de un compañero tutor."], correct: 2, justification: "La respuesta correcta es la C porque diversifica los formatos de acceso (auditivos, materiales accesibles, tecnología de apoyo) de manera sistemática, promoviendo la autonomía e interacción directa del estudiante con el contenido. A solo ajusta materiales existentes; B ofrece tareas alternativas sin garantizar acceso directo; D depende de un compañero, limitando la autonomía." },
+                { id: 13, text: "Al finalizar una unidad de Lengua Española, el docente quiere identificar en qué medida los estudiantes han logrado los aprendizajes esperados en comprensión lectora y producción escrita. Le interesa contar con evidencias del nivel alcanzado para retroalimentar al grupo, ajustar la enseñanza posterior y comunicar avances, sin que la evaluación se limite a la memorización de contenidos. ¿Qué tipo de evaluación le brindaría la información más pertinente sobre los conocimientos y habilidades adquiridos por sus estudiantes al cierre del tema?", options: ["Implementar una evaluación sumativa de carácter auténtico y criterial, basada en tareas integradoras, apoyada en rúbricas analíticas que permitan valorar niveles de desempeño, generar retroalimentación formativa y orientar decisiones pedagógicas posteriores.", "Administrar una evaluación sumativa tradicional y estandarizada, enfocada en la medición de contenidos mediante ítems de respuesta cerrada.", "Desarrollar una evaluación formativa continua, mediante observaciones informales y actividades sin criterios explícitos de logro.", "Aplicar una evaluación diagnóstica final, centrada en identificar vacíos conceptuales remanentes mediante pruebas objetivas."], correct: 0, justification: "La respuesta correcta es la A porque combina el carácter sumativo (cierre de unidad) con autenticidad (tareas integradoras), criterios claros (rúbricas analíticas) y función formativa (retroalimentación y decisiones pedagógicas). B solo mide contenidos cerrados; C carece de criterios explícitos; D es diagnóstica, no de cierre." },
+                { id: 14, text: "Tras implementar el Aprendizaje Basado en Proyectos (ABP) en la clase de ciencias, el docente observa que los estudiantes han desarrollado productos finales diversos en cuanto a calidad y formato, lo que evidencia distintos niveles de logro. Sin embargo, reconoce que estos productos no reflejan por sí solos la complejidad del proceso vivido. El docente identifica la necesidad de adoptar un enfoque de evaluación que le permita recoger evidencias más allá del producto final, considerando tanto el proceso como los resultados, así como el desarrollo de competencias científicas y transversales. ¿Qué enfoque de evaluación resultaría más pertinente para evaluar la efectividad del ABP en términos de aprendizajes y desarrollo de competencias?", options: ["Aplicar una prueba escrita estandarizada al finalizar el proyecto para comparar resultados entre estudiantes, centrando la valoración en los contenidos científicos abordados durante la unidad.", "Implementar una evaluación auténtica que integre evidencias de proceso y de producto, alineadas con las competencias, con retroalimentación continua durante el proyecto.", "Solicitar informes individuales al cierre del proyecto para verificar la comprensión de conceptos, dejando la valoración del trabajo en equipo como un criterio secundario no sistematizado.", "Valorar principalmente el producto final del proyecto con una rúbrica de presentación, priorizando la calidad del informe o maqueta como evidencia del aprendizaje logrado."], correct: 1, justification: "La respuesta correcta es la B porque integra evidencias del proceso y del producto, alineadas con las competencias, e incluye retroalimentación continua. Esto refleja la naturaleza del ABP, que valora el aprendizaje como proceso. A solo evalúa con prueba al final; C deja el trabajo en equipo como secundario; D solo valora el producto final." },
+                { id: 15, text: "Durante una clase de geografía, un estudiante memoriza definiciones sobre meridianos, paralelos y husos horarios, pero presenta dificultades para explicar su función o aplicarlos en situaciones prácticas, como ubicar lugares en un mapa o interpretar diferencias horarias. Además, suele confundir estos conceptos al trabajar con planisferios y globos terráqueos. El docente identifica que el aprendizaje ha estado centrado principalmente en la memorización. ¿Qué estrategia pedagógica sería más pertinente?", options: ["Trabajar los conceptos usando ejemplos puntuales del Ecuador y del meridiano de Greenwich para ubicar lugares en el mapa y profundizar en la función de los términos.", "Explicar los términos con apoyo del mapa, globos terráqueos y otros recursos visuales, promoviendo actividades de ubicación y comparación para que comprendan su significado, uso y función.", "Trabajar los conceptos mediante definiciones acompañadas de ejemplos de ubicación geográfica y ejercicios de identificación en mapas.", "Realizar correcciones inmediatas cada vez que confunda los términos, repitiendo las definiciones para reforzar su memorización y el uso correcto del vocabulario."], correct: 1, justification: "La respuesta correcta es la B porque utiliza recursos visuales variados (mapas, globos terráqueos) y promueve actividades de ubicación y comparación, pasando de la memorización a la comprensión funcional. A solo usa ejemplos puntuales sin diversidad de recursos; C sigue centrada en definiciones; D refuerza la memorización que ya se identificó como insuficiente." },
+                { id: 16, text: "En un aula de primaria de jornada extendida, el docente atiende a estudiantes con discapacidad visual y dificultades de lectura. Observa que la mayoría de los materiales se presentan en formato impreso, con letra pequeña y consignas escritas en la pizarra, lo que limita el acceso a la información y afecta la participación de algunos estudiantes. El docente busca replantear su práctica desde un enfoque inclusivo, incorporando múltiples formas de representación, acción y expresión, así como recursos accesibles y ajustes razonables. ¿Qué ajustes en la planificación y los recursos serían más adecuados para garantizar un aprendizaje inclusivo?", options: ["Desarrollar ajustes en la planificación centrados en la adaptación de los materiales impresos y las consignas, incorporando modificaciones en el tamaño de la letra, el uso de apoyos visuales y explicaciones orales complementarias.", "Desarrollar ajustes en la planificación centrados en la incorporación de apoyos específicos y recursos visuales y auditivos que favorezcan la participación de los estudiantes según sus necesidades.", "Desarrollar ajustes en la planificación centrados en la clasificación de los recursos utilizados en el aula, integrando materiales impresos adaptados, apoyos auditivos y actividades guiadas que permitan a los estudiantes acceder a los contenidos en distintos formatos.", "Desarrollar ajustes en la planificación centrados en la diversificación de las formas de representación, acción y expresión, integrando recursos accesibles, múltiples vías de interacción con los contenidos y alternativas para evidenciar los aprendizajes, de modo que todos los estudiantes participen en igualdad de oportunidades y desarrollen competencias sin disminuir la exigencia."], correct: 3, justification: "La respuesta correcta es la D porque diversifica las formas de representación, acción y expresión, integrando recursos accesibles y alternativas para todos, sin reducir la exigencia. Es el enfoque DUA más completo. A y B son parciales; C clasifica recursos pero no garantiza la diversidad de formas de evidenciar los aprendizajes." },
+                { id: 17, text: "En una escuela multigrado, el docente trabaja con estudiantes de diferentes edades y niveles que comparten el mismo espacio de aprendizaje. Reconoce la necesidad de fortalecer procesos de memoria, como la recuperación de información y la organización de secuencias, sin limitar las oportunidades para el pensamiento creativo. Asimismo, considera que la diversidad del grupo favorece el aprendizaje entre pares y la construcción colectiva del conocimiento. Busca diseñar estrategias que integren activación de saberes previos, práctica significativa y producción creativa. ¿Qué tipo de estrategia didáctica permitiría desarrollar simultáneamente memoria, creatividad y aprendizaje colaborativo?", options: ["Ajustar la planificación mediante un enfoque de progresión articulada que integre la recuperación de saberes previos en el desarrollo de los nuevos contenidos, a través de tareas complejas y contextualizadas, el uso de andamiajes diferenciados, agrupamientos flexibles y estrategias metacognitivas.", "Redefinir los objetivos de aprendizaje, priorizando contenidos fundamentales de menor complejidad, con el fin de asegurar que la mayoría del grupo alcance aprendizajes básicos.", "Incorporar actividades de recuperación de saberes previos y práctica guiada combinadas con ejercicios colaborativos de aplicación que permitan reforzar progresivamente los aprendizajes trabajados en el aula.", "Mantener la planificación original, incorporando actividades de refuerzo paralelas para los estudiantes con mayores dificultades."], correct: 0, justification: "La respuesta correcta es la A porque integra la recuperación de saberes previos, el uso de andamiajes diferenciados, agrupamientos flexibles y estrategias metacognitivas. Esto aborda simultáneamente la memoria, la creatividad y la colaboración en contextos complejos. B reduce la complejidad; C es más limitada en su alcance metacognitivo; D no ajusta la planificación real." },
+                { id: 18, text: "En un aula inclusiva, la docente identifica que un estudiante con discapacidad auditiva presenta dificultades persistentes para acceder a la información transmitida exclusivamente de forma oral, especialmente durante la formulación de consignas, las interacciones colaborativas y los procesos de retroalimentación formativa. Aunque el estudiante muestra disposición para participar, su comprensión fragmentada incide en una participación limitada y en una dependencia creciente de sus pares, lo que compromete progresivamente su autonomía y la equidad de sus oportunidades de aprendizaje. Considerando los principios del Diseño Universal para el Aprendizaje (DUA), ¿cuál de las siguientes adaptaciones pedagógicas resulta más pertinente y sostenible a lo largo del tiempo?", options: ["Implementar estrategias de mediación comunicativa centradas en la organización anticipada y la diversificación de los formatos de presentación de la información, integrando apoyos visuales estructurados, guías de trabajo y recursos complementarios que acompañen las explicaciones orales y favorezcan la comprensión en las distintas fases de la actividad.", "Implementar estrategias de mediación comunicativa centradas en la flexibilización de los procesos de seguimiento, retroalimentación y evaluación del aprendizaje, ofreciendo acompañamiento adicional, retroalimentación y ajustes en los criterios de logro.", "Implementar estrategias de mediación comunicativa centradas en el ajuste del discurso oral del docente, incorporando pausas intencionadas, reformulaciones y verificaciones de la comprensión.", "Implementar estrategias de mediación comunicativa centradas en regular las dinámicas de interacción en el aula, priorizando momentos de trabajo individual."], correct: 0, justification: "La respuesta correcta es la A porque diversifica los formatos de presentación (visual, guías, recursos complementarios) de manera anticipada y sostenida, favoreciendo la comprensión autónoma del estudiante con discapacidad auditiva. B y C son parciales y no garantizan acceso completo; D prioriza el trabajo individual, lo que no promueve la equidad ni la autonomía." },
+                { id: 19, text: "Un docente desea incorporar metodologías innovadoras para fortalecer los aprendizajes, pero trabaja con un grupo diverso en cuanto a ritmos de aprendizaje, niveles de autonomía y acceso a recursos. Además, el contexto escolar presenta limitaciones de tiempo y de conectividad, mientras que los contenidos incluyen dimensiones conceptuales, procedimentales y actitudinales. El docente comprende que la innovación debe responder a criterios de pertinencia y de efectividad, más allá de la novedad. Por ello, busca seleccionar estrategias que se ajusten a las características del estudiantado y del entorno, favoreciendo aprendizajes significativos. ¿Qué criterios deberían orientar la elección de un enfoque metodológico contextualizado e inclusivo?", options: ["Seleccionar estrategias metodológicas solo en función de la disponibilidad de materiales y tiempo, sin considerar las diferencias del grupo.", "Seleccionar metodologías que permitan asegurar el dominio conceptual de los contenidos curriculares, integrando actividades prácticas y colaborativas según las posibilidades del contexto.", "Analizar las características de los estudiantes, sus estilos de aprendizaje y el contexto educativo, eligiendo estrategias activas como el aprendizaje basado en proyectos o en problemas.", "Combinar estrategias expositivas con actividades participativas estructuradas, priorizando aquellas metodologías que faciliten la comprensión de contenidos y la organización del trabajo del grupo."], correct: 2, justification: "La respuesta correcta es la C porque parte del análisis de las características del estudiantado, sus estilos de aprendizaje y el contexto educativo, eligiendo estrategias activas y contextualizadas. Esto garantiza pertinencia y efectividad. A ignora las diferencias del grupo; B solo asegura dominio conceptual; D combina métodos sin análisis previo del contexto." },
+                { id: 20, text: "Durante actividades de producción oral y escrita, el docente observa que varios estudiantes participan activamente, pero presentan dificultades para organizar sus ideas, utilizar vocabulario preciso y construir textos coherentes. Sus producciones muestran escasa conexión lógica y limitaciones en el uso de recursos lingüísticos, afectando la claridad del mensaje. El docente busca una estrategia que trascienda la corrección final y acompañe el proceso de construcción del discurso, promoviendo la planificación, la revisión y la mejora continua. Considerando la necesidad de fortalecer la autorregulación y la calidad de las producciones, ¿qué estrategia didáctica resultaría más pertinente?", options: ["Promover una estrategia didáctica centrada en la incorporación de pautas y guías de escritura y de expresión oral, integrando momentos de planificación, producción y revisión con apoyo del docente.", "Promover una estrategia didáctica centrada en la explicitación y el acompañamiento del proceso de construcción textual, integrando la planificación, la producción y la revisión mediante andamiajes, criterios claros y espacios de reflexión sobre las propias decisiones, de modo que los estudiantes comprendan cómo organizar sus ideas, mejorar sus producciones y avanzar de manera autónoma.", "Promover actividades frecuentes de producción oral y escrita acompañadas de orientaciones de revisión y espacios de intercambio que permitan mejorar progresivamente la claridad y organización de las ideas.", "Promover una estrategia didáctica centrada en la modelación de textos y discursos, proporcionando ejemplos de producciones bien estructuradas."], correct: 1, justification: "La respuesta correcta es la B porque integra planificación, producción y revisión mediante andamiajes, criterios claros y reflexión sobre las propias decisiones, promoviendo la autorregulación y la autonomía. Es la más completa. A y C son parciales (pautas o revisión sin andamiajes explícitos); D solo modela sin acompañar el proceso propio del estudiante." },
+                { id: 21, text: "Tras revisar las producciones escritas de sus estudiantes, el docente identifica avances en la organización de las ideas, pero persisten dificultades en el uso de conectores y en la coherencia entre párrafos. Aunque ha brindado retroalimentación centrada en la corrección de errores y en la asignación de calificaciones, observa que estas dificultades se mantienen. Esto sugiere una comprensión limitada de los criterios de calidad textual y escasas oportunidades para desarrollar habilidades de autorregulación. El docente busca una estrategia que ayude a los estudiantes a reconocer fortalezas, identificar aspectos de mejora y comprender cómo avanzar de manera autónoma. ¿Qué tipo de retroalimentación sería más pertinente?", options: ["Desarrollar una retroalimentación centrada en la corrección detallada de los errores presentes en los textos, señalando específicamente los errores en el uso de conectores y en la coherencia.", "Desarrollar una retroalimentación centrada en criterios de calidad y en la reflexión sobre el propio trabajo, ofreciendo comentarios que ayuden al estudiante a reconocer qué está logrando, identificar errores frecuentes, proponer acciones concretas de mejora y revisar sus textos de manera más consciente en futuras producciones.", "Desarrollar una retroalimentación centrada en la descripción del desempeño del estudiante, destacando los avances en la organización de ideas y señalando aspectos a mejorar.", "Desarrollar una retroalimentación centrada en la orientación del proceso de mejora mediante sugerencias, proporcionando ejemplos de uso adecuado de conectores."], correct: 1, justification: "La respuesta correcta es la B porque centra la retroalimentación en criterios de calidad y en la reflexión metacognitiva, ayudando al estudiante a reconocer logros, identificar errores y proponer acciones concretas de mejora. Es la más completa para promover la autorregulación. A solo corrige errores; C describe el desempeño sin orientar la acción; D sugiere sin desarrollar la reflexión propia." },
+                { id: 22, text: "Un docente de tercer grado busca fortalecer la comunicación efectiva de sus estudiantes en diversos contextos. Reconoce la importancia de que las habilidades comunicativas desarrolladas en el aula puedan transferirse a distintos escenarios de la vida cotidiana. Por ello, desea diseñar experiencias de aprendizaje que exijan ajustar el discurso según el propósito, el interlocutor y la situación comunicativa. Considerando la necesidad de promover un uso intencional y flexible del lenguaje, ¿qué estrategia de aula permitiría desarrollar habilidades comunicativas transferibles y contextualizadas?", options: ["Fomentar el uso de un lenguaje claro, estructurado y adaptado a cada contexto, promoviendo la escucha activa y el respeto en la interacción oral y escrita.", "Evitar la enseñanza explícita de estrategias de comunicación, permitiendo que los estudiantes aprendan a expresarse por sí mismos sin guía.", "Enseñar a los estudiantes a comunicarse utilizando un solo registro formal, sin importar el contexto en el que se encuentren.", "Instruir a los estudiantes para que utilicen frases memorizadas en sus interacciones, sin enfatizar la construcción del significado en el diálogo."], correct: 0, justification: "La respuesta correcta es la A porque promueve el uso de un lenguaje adaptado a cada contexto, con escucha activa y respeto, lo que desarrolla habilidades comunicativas transferibles y contextualizadas. B elimina la guía docente; C impone un solo registro sin considerar el contexto; D reduce la comunicación a frases memorizadas sin construcción de significado." },
+                { id: 23, text: "Al iniciar una unidad sobre fracciones, el docente detecta que algunos estudiantes aplican procedimientos de manera mecánica y otros presentan dificultades para relacionar las fracciones con representaciones gráficas y situaciones de reparto. Aunque el grupo ha trabajado previamente conceptos como mitades y tercios, los aprendizajes aparecen fragmentados y poco conectados. El docente busca diseñar una progresión que articule los saberes previos con contenidos más complejos, como equivalencias, comparación de fracciones y representación en la recta numérica. Considerando la importancia de establecer conexiones significativas entre distintas representaciones y contextos, ¿qué estrategia didáctica resultaría más adecuada?", options: ["Mantenerse en la enseñanza de mitades y tercios sin introducir nuevos conceptos, para asegurar que los estudiantes no se sientan abrumados.", "Iniciar con actividades de aplicación de fracciones equivalentes y comparación, incorporando breves instancias de recuperación de saberes previos.", "Diseñar actividades progresivas que inicien con la revisión de fracciones simples y avancen hacia operaciones con fracciones, contextualizando el aprendizaje en situaciones del mundo real.", "Diseñar actividades centradas en la representación gráfica y el cálculo de fracciones equivalentes mediante ejercicios secuenciados."], correct: 2, justification: "La respuesta correcta es la C porque diseña una progresión articulada que parte de fracciones simples y avanza hacia operaciones, contextualizando el aprendizaje en situaciones reales. Esto conecta saberes previos con nuevos contenidos de manera significativa. A se queda en lo básico; B empieza con lo complejo sin recuperar saberes previos; D solo usa ejercicios secuenciados sin contextualización." },
+                { id: 24, text: "En una actividad de lectura guiada en parejas, el docente organiza estudiantes con distintos niveles de desempeño para promover el aprendizaje entre pares. Sin embargo, observa que en algunas parejas el estudiante con mayor dominio lector asume un rol dominante, corrige constantemente a su compañero y resuelve las tareas sin explicar sus estrategias de comprensión. Como consecuencia, el estudiante con mayores dificultades disminuye su participación y desarrolla una actitud dependiente. Además, la actividad carece de orientaciones claras para ofrecer apoyo y retroalimentación constructiva. Considerando la necesidad de promover relaciones equitativas y autonomía lectora, ¿qué intervención docente resultaría más adecuada?", options: ["Implementar estrategias de intervención centradas en la enseñanza explícita de habilidades de tutoría entre pares, el modelado de estrategias de comprensión lectora y la regulación de la interacción, integrando andamiajes para formular preguntas, explicar procesos, ofrecer retroalimentación constructiva y reflexionar sobre el aprendizaje, con el propósito de promover la autonomía y la participación equitativa de ambos estudiantes.", "Implementar estrategias de intervención centradas en la supervisión directa de las interacciones entre pares, ofreciendo correcciones oportunas durante la actividad.", "Implementar estrategias de intervención centradas en la reorganización de las parejas de trabajo y en la asignación de roles específicos, estableciendo funciones diferenciadas para cada integrante.", "Implementar estrategias de intervención centradas en la estructuración de actividades secuenciadas con apoyo del docente."], correct: 0, justification: "La respuesta correcta es la A porque enseña explícitamente las habilidades de tutoría, modela estrategias y regula la interacción con andamiajes claros para preguntar, explicar y reflexionar. Promueve la autonomía de ambos. B solo supervisa y corrige sin enseñar; C reorganiza sin trabajar las habilidades de tutoría; D estructura actividades pero no aborda la dinámica de pareja." },
+                { id: 25, text: "Durante la secuencia didáctica sobre relaciones de cantidad y comparación de números, el docente observa que un grupo de estudiantes logra identificar los resultados cuando se presentan ejercicios simbólicos (números y signos), mientras que otros muestran confusión, se frustran con facilidad y tienden a memorizar procedimientos sin comprender el significado de lo que hacen. Además, se evidencian diferencias en el ritmo de trabajo, en la capacidad de explicar con palabras lo que hacen y en la transferencia de lo aprendido a situaciones cotidianas. ¿Cuál de las siguientes estrategias permitiría atender esta diversidad y favorecer la comprensión significativa de los conceptos matemáticos?", options: ["El docente organiza el proceso de enseñanza de los contenidos matemáticos a partir de una planificación estructurada y alineada con los objetivos de aprendizaje, integrando materiales concretos, recursos digitales interactivos y entornos de simulación que permiten explorar, representar y manipular los conceptos en múltiples registros, con retroalimentación continua a lo largo del proceso.", "El docente organiza el proceso de enseñanza de los contenidos matemáticos a partir de una planificación estructurada y alineada con los objetivos de aprendizaje, presentando explicaciones orales estructuradas, apoyadas en organizadores visuales y ejemplos modelados, promoviendo la repetición guiada de procedimientos como estrategia para favorecer la comprensión.", "El docente organiza el proceso de enseñanza de los contenidos matemáticos a partir de una planificación estructurada y alineada con los objetivos de aprendizaje, implementando evaluaciones periódicas de carácter formativo para identificar brechas de aprendizaje significativo y orientar actividades de refuerzo.", "El docente organiza el proceso de enseñanza de los contenidos matemáticos a partir de una planificación estructurada y alineada con los objetivos de aprendizaje, diseñando secuencias activas e integradoras alineadas con los objetivos."], correct: 0, justification: "La respuesta correcta es la A porque integra materiales concretos, recursos digitales y entornos de simulación que permiten explorar y representar los conceptos matemáticos en múltiples registros con retroalimentación continua. Esto atiende la diversidad y favorece la comprensión significativa. B solo usa explicaciones y repetición; C se enfoca en evaluaciones de refuerzo; D describe secuencias activas sin especificar los recursos." },
+                { id: 26, text: "En una clase de matemáticas, el docente propone que los estudiantes formulen y resuelvan problemas a partir de situaciones cotidianas, explicando posteriormente cómo llegaron a la solución. Aunque algunos obtienen respuestas correctas, presentan dificultades para justificar sus estrategias, representar sus razonamientos o explicar sus decisiones. Otros aplican procedimientos mecánicos sin evidenciar comprensión. El docente busca fortalecer el pensamiento crítico, la creatividad y la metacognición, promoviendo que los estudiantes hagan visibles sus procesos de pensamiento mediante la argumentación y la reflexión. ¿Qué estrategia de aula resultaría más pertinente para favorecer aprendizajes significativos y transferibles?", options: ["Desarrollar una estrategia de aula centrada en el intercambio de soluciones entre pares, incorporando actividades en las que los estudiantes comparen sus respuestas y comenten en discusiones guiadas para reconocer diferentes formas de resolver los problemas.", "Desarrollar estrategias de aula que promuevan explicaciones orales y escritas de los procedimientos utilizados, incorporando comparaciones entre estrategias y preguntas de reflexión sobre las decisiones tomadas.", "Desarrollar de manera progresiva una estrategia de aula centrada en la resolución guiada de problemas, incorporando explicaciones del procedimiento, secuencias de práctica estructurada, preguntas dirigidas y momentos de verificación que permitan a los estudiantes describir los pasos seguidos, identificar errores y mejorar la ejecución durante la resolución.", "Desarrollar una estrategia de aula centrada en la explicación de los procesos y el intercambio entre pares."], correct: 1, justification: "La respuesta correcta es la B porque promueve explicaciones orales y escritas de los procedimientos, comparación de estrategias y reflexión sobre las decisiones. Esto desarrolla el pensamiento crítico, la metacognición y la transferencia. A solo compara respuestas sin profundizar en el razonamiento; C es guiada pero se enfoca más en procedimientos que en metacognición; D es demasiado general." },
+                { id: 27, text: "En una unidad didáctica, el docente observa diferencias significativas en los ritmos y niveles de comprensión del grupo. Mientras algunos estudiantes avanzan con rapidez y demandan mayores desafíos, otros requieren más tiempo, apoyos concretos y estrategias de andamiaje para alcanzar los aprendizajes esperados. La aplicación de una secuencia homogénea ha generado desmotivación tanto en quienes necesitan profundización como en quienes requieren acompañamiento. El docente desea responder a esta diversidad sin fragmentar el grupo. Considerando un enfoque por competencias, ¿cómo debería ajustar la planificación?", options: ["Desarrollar una decisión de planificación centrada en la reorganización de la secuencia didáctica, incorporando actividades de recuperación de saberes previos y de aplicación contextualizada que favorezcan la comprensión progresiva de los nuevos contenidos en el grupo.", "Desarrollar progresivamente una decisión de planificación centrada en la reorganización de la secuencia didáctica, integrando actividades diferenciadas según los niveles de desempeño y apoyos específicos para que los estudiantes con mayores dificultades puedan avanzar en paralelo al desarrollo de los nuevos contenidos de la unidad.", "Desarrollar una decisión de planificación centrada en la reorganización de la secuencia didáctica, con un mayor énfasis en la revisión y ejercitación de contenidos previos mediante actividades estructuradas que permitan consolidar los procedimientos básicos antes de avanzar.", "Desarrollar una decisión de planificación centrada en la reorganización de la secuencia didáctica, articulando la reconstrucción de saberes previos mediante situaciones contextualizadas."], correct: 1, justification: "La respuesta correcta es la B porque integra actividades diferenciadas según los niveles de desempeño y apoyos específicos para quienes tienen dificultades, permitiendo que todos avancen en paralelo. Responde a la diversidad sin fragmentar el grupo. A solo recupera saberes previos; C se enfoca en consolidar lo previo sin avanzar; D describe solo la contextualización sin la diferenciación." },
+                { id: 28, text: "Durante una actividad en parejas orientada a resolver una tarea que requiere análisis, toma de decisiones y elaboración conjunta de un producto, el docente observa dinámicas de participación desiguales. Uno de los estudiantes adopta un rol pasivo, limitándose a observar o a aceptar las decisiones de su compañero, mientras que el otro asume un rol dominante y ejecuta la mayor parte del trabajo de forma unilateral. Aunque el producto final cumple con los criterios establecidos, el proceso evidencia escasa construcción conjunta del conocimiento. Considerando la necesidad de promover participación equitativa, responsabilidad compartida e interdependencia positiva, ¿qué acción pedagógica resultaría más pertinente?", options: ["Implementar una dinámica de trabajo que combine el modelado entre pares con la participación guiada, orientando al estudiante con mayor dominio a explicar los procedimientos y al otro a intervenir en momentos específicos.", "Reorganizar progresivamente la conformación de las parejas de trabajo y ajustar las condiciones de la tarea para una mayor responsabilidad individual, solicitando que cada estudiante desarrolle una parte del producto final.", "Mantener de manera progresiva la dinámica de trabajo en parejas, reforzando las normas de participación y convivencia, promoviendo recordatorios sistemáticos sobre el respeto mutuo.", "Implementar estrategias de estructuración del trabajo en parejas, centradas en la definición de responsabilidades compartidas y en el seguimiento del proceso, integrando instancias de verificación conjunta, retroalimentación entre pares y momentos de reflexión sobre la participación."], correct: 3, justification: "La respuesta correcta es la D porque estructura responsabilidades compartidas, hace seguimiento del proceso e integra retroalimentación entre pares y reflexión sobre la participación. Esto promueve la interdependencia positiva. A tiene al dominate solo explicar sin reestructurar la dinámica; B individualiza la responsabilidad sin construir conjuntamente; C solo refuerza normas sin cambiar la estructura." },
+                { id: 29, text: "Un docente implementa una plataforma de aprendizaje en línea para ampliar el acceso a contenidos y fortalecer el aprendizaje autónomo. Sin embargo, observa diferencias significativas en la participación: algunos estudiantes utilizan la plataforma con facilidad, mientras otros enfrentan dificultades relacionadas con habilidades digitales, acceso a recursos, comprensión de consignas o apoyo familiar. El docente reconoce que los datos de acceso y cumplimiento de actividades no son suficientes para valorar su impacto. Por ello, busca un enfoque que permita analizar la calidad de la interacción, la accesibilidad, las barreras existentes y los efectos sobre los aprendizajes. ¿Qué enfoque de evaluación sería el más adecuado?", options: ["Implementar un enfoque de evaluación centrado en la incorporación de actividades lúdicas y de mecanismos de retroalimentación en la plataforma, priorizando el mantenimiento del interés y la participación del estudiantado.", "Implementar un enfoque de evaluación centrado en el uso flexible de la plataforma como recurso complementario, permitiendo que su uso dependa de las condiciones de acceso del estudiantado.", "Implementar un enfoque de evaluación integral centrado en el análisis del uso, la accesibilidad y la experiencia de aprendizaje en la plataforma, combinando el seguimiento de la interacción con los recursos, la identificación de barreras y la aplicación de instrumentos cualitativos, como encuestas o entrevistas, para comprender las dificultades y ajustar la mediación pedagógica.", "Implementar un enfoque de evaluación centrado en el registro sistemático de actividades completadas para medir el nivel de cumplimiento."], correct: 2, justification: "La respuesta correcta es la C porque evalúa de manera integral: analiza el uso, la accesibilidad, la experiencia de aprendizaje, identifica barreras y usa instrumentos cualitativos para ajustar la mediación. A solo busca mantener el interés; B es demasiado flexible sin evaluar el impacto; D solo mide el cumplimiento de actividades sin profundidad." },
+                { id: 30, text: "En un grupo de 6.° grado, la docente identifica que cinco estudiantes de alto desempeño académico alcanzan y superan los aprendizajes esperados, pero muestran menor interés en actividades que consideran repetitivas o poco desafiantes. Su participación en los trabajos colaborativos disminuye y expresan que las propuestas no responden ni a sus intereses ni a sus capacidades. Esta situación comienza a afectar la convivencia, generando segmentación dentro del grupo. Considerando la necesidad de promover la participación, fortalecer la cohesión grupal y ofrecer retos significativos para todos, ¿qué estrategia pedagógica resulta más pertinente?", options: ["Implementar estrategias de acompañamiento pedagógico centradas en el seguimiento cercano del desempeño y la motivación de los estudiantes con alto rendimiento, generando espacios de retroalimentación.", "Implementar estrategias de gestión del clima de aula centradas en el fortalecimiento de las normas de convivencia y la cohesión grupal, promoviendo actividades orientadas al respeto, la inclusión y la integración.", "Implementar estrategias de organización del trabajo colaborativo centradas en la asignación estructurada de roles y responsabilidades, procurando distribuir equitativamente la participación dentro de los grupos.", "Implementar estrategias de diversificación de las experiencias de aprendizaje centradas en la incorporación de opciones con distintos niveles de complejidad y formas de participación, integrando temáticas vinculadas a los intereses del grupo y promoviendo espacios donde los estudiantes puedan profundizar, crear y aportar desde sus capacidades en las actividades."], correct: 3, justification: "La respuesta correcta es la D porque diversifica las experiencias de aprendizaje con distintos niveles de complejidad, vincula las temáticas a los intereses del grupo y permite que los estudiantes de alto desempeño profundicen y aporten desde sus capacidades. Promueve participación y cohesión. A solo acompaña a los de alto desempeño; B gestiona el clima sin abordar el desafío cognitivo; C estructura roles sin diferenciar la complejidad." },
+                { id: 31, text: "El docente trabaja en un contexto donde el acceso a internet es limitado y la mayoría de los estudiantes no dispone de dispositivos tecnológicos en el hogar. Al revisar su planificación, identifica actividades que requieren trabajo en línea fuera del aula, lo que podría generar desigualdades en las oportunidades de aprendizaje. Además, reconoce la diversidad de condiciones socioeconómicas y apoyos familiares del grupo. Busca mantener la intencionalidad pedagógica y el enfoque por competencias mediante alternativas accesibles y recursos disponibles en el entorno. Considerando este contexto, ¿qué estrategia de planificación permitiría garantizar la equidad y la continuidad de los aprendizajes para todos?", options: ["Desarrollar una estrategia de planificación centrada en la reorganización de las experiencias de aprendizaje, articulando la intencionalidad de las actividades con alternativas accesibles, diversas formas de participación y recursos contextualizados, de modo que los estudiantes puedan avanzar y evidenciar sus aprendizajes en función de sus condiciones.", "Desarrollar una estrategia de planificación centrada en la reorganización de las actividades previstas, priorizando aquellas que puedan realizarse con los recursos disponibles en el aula y reduciendo la dependencia de tareas en línea fuera del horario escolar.", "Desarrollar una estrategia de planificación centrada en adaptar las actividades digitales a formatos accesibles, incorporando alternativas impresas y explicaciones guiadas y contextualizadas.", "Desarrollar una estrategia de planificación centrada en la reconfiguración de las actividades, mediante recursos accesibles y contextualizados, incorporando diversas formas de participación."], correct: 0, justification: "La respuesta correcta es la A porque reorganiza las experiencias de aprendizaje manteniendo la intencionalidad pedagógica y el enfoque por competencias, con alternativas accesibles y diversas formas de participación según las condiciones del estudiante. B solo prioriza actividades del aula sin garantizar la continuidad del enfoque; C adapta a formatos impresos sin garantizar la diversidad; D es similar a A pero menos completa." },
+                { id: 32, text: "En un grupo de sexto grado, el docente identifica diferencias significativas en el acceso a dispositivos y conectividad digital. Mientras algunos estudiantes cuentan con tecnología en el hogar, otros dependen exclusivamente de las oportunidades brindadas en el centro educativo. El docente reconoce que las tareas que exigen uso de tecnología en el hogar pueden profundizar estas desigualdades. Por ello, busca reorganizar el uso pedagógico de las TIC para garantizar la equidad, sin renunciar al desarrollo de competencias digitales y pensamiento crítico. ¿Cómo debería organizar el uso de la tecnología para asegurar la participación y el aprendizaje de todos?", options: ["Desarrollar una estrategia centrada en la diversificación de recursos y de formas de acceso al aprendizaje, integrando herramientas digitales y alternativas analógicas, junto con dinámicas de trabajo flexibles que permitan a los estudiantes participar según sus condiciones.", "Desarrollar una estrategia que combine plataformas digitales y recursos presenciales, promoviendo el acceso gradual a herramientas tecnológicas según las posibilidades del grupo.", "Desarrollar una estrategia centrada en la diversificación de los recursos y las formas de acceso al aprendizaje, integrando de manera articulada herramientas digitales y alternativas analógicas que permitan la participación del estudiantado considerando sus condiciones de acceso y favoreciendo oportunidades de aprendizaje equitativas.", "Desarrollar una estrategia centrada en la priorización de metodologías tradicionales presenciales, reduciendo la incorporación de recursos tecnológicos para evitar posibles desigualdades."], correct: 2, justification: "La respuesta correcta es la C porque integra de manera articulada herramientas digitales y alternativas analógicas considerando las condiciones de acceso, favoreciendo oportunidades equitativas. A es similar pero menos articulada; B combina recursos sin considerar la equidad explícitamente; D elimina la tecnología, lo que no desarrolla competencias digitales." },
+                { id: 33, text: "En una escuela con acceso limitado a internet, el docente desea integrar la tecnología para fortalecer el pensamiento crítico y la resolución de problemas. Sin embargo, identifica que varios recursos requieren conectividad permanente y acceso constante a dispositivos, condiciones que no están garantizadas para todo el grupo. Además, el acceso es desigual e intermitente. El docente busca aprovechar la tecnología disponible sin depender de internet en tiempo real, manteniendo la indagación, el análisis y la toma de decisiones. ¿Qué estrategia resultaría más adecuada para alcanzar estos propósitos en este contexto?", options: ["Desarrollar una estrategia centrada en la incorporación de la tecnología como recurso complementario en la planificación, articulándola con tareas estructuradas y secuencias didácticas que promuevan el desarrollo de habilidades de pensamiento.", "Desarrollar una estrategia centrada en la integración de recursos tecnológicos accesibles sin conexión permanente, articulados con situaciones problemáticas del entorno que promuevan la exploración, la formulación de hipótesis, la argumentación y la construcción de soluciones fundamentadas, favoreciendo el desarrollo de competencias.", "Desarrollar una estrategia centrada en el uso de dispositivos sin conexión para la organización y presentación de información disciplinar, integrando recursos visuales, como diapositivas, esquemas y explicaciones estructuradas.", "Desarrollar una estrategia centrada en la sustitución de la mediación presencial por recursos digitales asincrónicos, como videos y presentaciones en línea."], correct: 1, justification: "La respuesta correcta es la B porque integra recursos tecnológicos accesibles sin conexión permanente, articulados con situaciones problemáticas que promueven exploración, argumentación y construcción de soluciones. Mantiene el pensamiento crítico sin depender de internet. A usa tecnología como complemento sin articulación con situaciones problemáticas; C solo presenta información; D requiere acceso a internet." },
+                { id: 34, text: "En Lengua Española del segundo ciclo, el docente propone actividades de producción escrita y análisis de textos en equipos para fortalecer la argumentación y la construcción colectiva de ideas. Sin embargo, observa que algunos estudiantes evitan participar debido a conflictos interpersonales o porque consideran las tareas poco significativas. Esto genera participación desigual, baja corresponsabilidad y dificultades para sostener diálogos constructivos, afectando tanto la calidad de los productos como el clima de aula. Además, las dinámicas colaborativas carecen de orientaciones explícitas para la interacción y la gestión de desacuerdos. ¿Qué estrategia pedagógica permitiría fortalecer la participación, la convivencia y la colaboración efectiva?", options: ["Implementar estrategias de aprendizaje cooperativo centradas en la estructuración de dinámicas colaborativas y en la definición de normas de trabajo en equipo, incorporando orientaciones para la participación, la autorregulación y el seguimiento de las tareas, así como espacios de revisión de los productos elaborados.", "Implementar estrategias de aprendizaje cooperativo centradas en la enseñanza de habilidades de interacción, la estructuración de dinámicas colaborativas y la reflexión sobre el trabajo en equipo, integrando normas compartidas, roles interdependientes y espacios de evaluación conjunta que favorezcan la participación, la corresponsabilidad y la construcción de productos colectivos de mayor calidad.", "Implementar estrategias de organización del trabajo colaborativo incorporando roles y pautas de interacción en los equipos, junto con momentos de revisión grupal que permitan mejorar la coordinación y la participación.", "Implementar estrategias de mediación pedagógica centradas en la adecuación de las tareas colaborativas según los intereses y niveles del grupo."], correct: 1, justification: "La respuesta correcta es la B porque enseña explícitamente habilidades de interacción, estructura dinámicas colaborativas con normas compartidas, roles interdependientes y evaluación conjunta. Aborda todos los problemas identificados: conflictos, baja corresponsabilidad y falta de orientaciones. A y C son parciales; D adapta las tareas sin abordar las dinámicas de interacción." },
+                { id: 35, text: "En segundo grado, el docente trabaja con estudiantes que hablan distintas variedades lingüísticas y otros que presentan dificultades para comprender términos académicos. Al analizar su práctica, identifica que el lenguaje utilizado en textos y consignas puede convertirse en una barrera para el aprendizaje. Busca implementar estrategias que faciliten la comprensión del lenguaje académico sin simplificar excesivamente los contenidos ni desvalorizar las formas de habla de los estudiantes. Su propósito es garantizar el acceso al currículo y promover la participación de todo el grupo. ¿Qué estrategia didáctica resultaría más adecuada para favorecer la comprensión en un contexto de diversidad lingüística?", options: ["Priorizar un registro cercano y cotidiano en las interacciones de aula, reduciendo la densidad conceptual del discurso para asegurar que todos los estudiantes participen con mayor comodidad.", "Sostener el uso del lenguaje disciplinar propio del área, limitando simplificaciones excesivas, con la intención de favorecer la familiarización gradual con los términos técnicos.", "Intervenir de forma frecuente en las participaciones orales para ajustar expresiones al registro académico esperado.", "Alternar el uso del lenguaje académico con reformulaciones estratégicas, ejemplos contextualizados y apoyos semánticos que permitan construir significado sin sustituir el vocabulario propio de la disciplina."], correct: 3, justification: "La respuesta correcta es la D porque alterna el lenguaje académico con reformulaciones y apoyos semánticos, construyendo significado sin sustituir el vocabulario disciplinar. Garantiza acceso sin simplificar ni desvalorizar las formas de habla. A reduce la densidad conceptual; B insiste en el lenguaje técnico sin apoyos; C corrige las expresiones, lo que puede desvalorizar las variedades lingüísticas." },
+                { id: 36, text: "Al iniciar una nueva unidad didáctica, el docente necesita conocer con mayor precisión los saberes previos, las habilidades y las posibles concepciones alternativas de sus estudiantes respecto de los contenidos que se abordarán. Reconoce que el grupo es heterogéneo y que avanzar sin esta información podría generar dificultades para de nuevos conceptos y ampliar las brechas de aprendizaje. Su propósito es recopilar evidencias que orienten las decisiones pedagógicas. ¿Qué tipo de evaluación resultaría más pertinente para orientar la planificación?", options: ["Evaluación sumativa, ya que busca medir el rendimiento final de los estudiantes y asignar calificaciones.", "Evaluación diagnóstica, aplicada durante el desarrollo de la unidad para identificar dificultades emergentes y ajustar las actividades, con el fin de mejorar los resultados finales del estudiantado.", "Evaluación diagnóstica, ya que permite identificar fortalezas y áreas de oportunidad del estudiantado antes de iniciar la enseñanza de nuevos contenidos.", "Evaluación formativa inicial, orientada a recoger información sobre los desempeños previos y ajustar las actividades durante las primeras etapas de la unidad."], correct: 2, justification: "La respuesta correcta es la C porque la evaluación diagnóstica identifica fortalezas y áreas de oportunidad antes de iniciar la enseñanza de nuevos contenidos. Es el tipo de evaluación diseñado exactamente para este propósito. A es sumativa, no diagnóstica; B aplica la evaluación durante la unidad, no antes; D describe una evaluación formativa inicial que no es lo mismo que diagnóstica." },
+                { id: 37, text: "Luego de evaluar el desempeño en matemáticas mediante diversas evidencias, el docente necesita comunicar a estudiantes y familias el nivel de logro alcanzado. Sin embargo, reconoce que las calificaciones numéricas no reflejan adecuadamente qué sabe hacer cada estudiante, cuáles son sus dificultades ni qué pueden favorecer su progreso. Además, las familias presentan distintos niveles de escolaridad y formas de acceso a la información. El docente busca una estrategia que fortalezca la comprensión del proceso de aprendizaje y promueva la corresponsabilidad. ¿Cuál sería la forma más pertinente de comunicar el progreso estudiantil?", options: ["Configurar un informe de progreso criterial con síntesis interpretativa, que articule descriptores de desempeño por indicador con evidencias seleccionadas del estudiante.", "Desarrollar un dispositivo de comunicación evaluativa dialógica y formativa, que integre niveles de logro con descriptores graduales, curaduría de evidencias significativas, y orientaciones diferenciadas para el apoyo en el hogar, habilitando además espacios estructurados de interacción donde familia y estudiante cointerpreteten los resultados y acuerden acciones de mejora contextualizadas.", "Implementar un reporte mixto de desempeño con anclaje normativo, en el que se combinen valoraciones cuantitativas estandarizadas por indicador con referencias comparativas.", "Diseñar una síntesis visual del progreso por competencias e indicadores, incorporando representaciones gráficas del nivel alcanzado y breves descripciones de los resultados."], correct: 1, justification: "La respuesta correcta es la B porque integra niveles de logro con descriptores graduales, evidencias significativas y orientaciones diferenciadas, además de espacios de interacción donde familia y estudiante interpreten juntos los resultados y acuerden acciones de mejora. Es la más completa para promover la corresponsabilidad. A es informativa pero no dialógica; C usa comparativas que pueden generar confusión; D es visual pero no promueve la interacción." },
+                { id: 38, text: "En una clase de Ciencias Sociales del primer ciclo, la docente identifica que un estudiante presenta dificultades para comprender la secuencia temporal y el orden de los acontecimientos. Aunque sigue explicaciones guiadas, suele reproducir información de manera fragmentada y tiene problemas para relacionar hechos, construir líneas de tiempo o comparar períodos históricos. También presenta dificultades para transferir estas nociones a situaciones cotidianas. Las estrategias utilizadas se han basado principalmente en la exposición oral y en textos lineales. Considerando la necesidad de fortalecer el pensamiento relacional y la comprensión temporal, ¿qué apoyo pedagógico sería más adecuado?", options: ["Implementar estrategias de apoyo centradas en la adecuación del nivel de complejidad de las tareas y el ritmo de trabajo, ajustando la cantidad de información presentada.", "Implementar estrategias de apoyo centradas en la incorporación de recursos visuales, ejemplos contextualizados y actividades de aplicación guiada durante el desarrollo de las tareas, integrando líneas de tiempo, secuencias de imágenes, relatos cotidianos y ejercicios estructurados.", "Implementar estrategias de apoyo centradas en la construcción de nociones temporales a través de experiencias variadas y articuladas, integrando el uso sistemático de representaciones múltiples, la organización de secuencias significativas, la exploración de situaciones contextualizadas y espacios de verbalización que permitan establecer relaciones de anterioridad, simultaneidad y cambio, favoreciendo la comprensión y la transferencia a diferentes contextos.", "Implementar estrategias de apoyo centradas en la adecuación del nivel de las tareas, ajustando el tipo de representaciones temporales utilizadas."], correct: 2, justification: "La respuesta correcta es la C porque construye nociones temporales a través de representaciones múltiples, secuencias significativas, situaciones contextualizadas y verbalización, favoreciendo la comprensión y la transferencia. Es la estrategia más completa y profunda. A y D solo ajustan la complejidad; B incorpora recursos visuales útiles pero de manera menos sistemática que C." },
+                { id: 39, text: "El docente observa que sus estudiantes utilizan con frecuencia expresiones propias del lenguaje cotidiano y de canciones populares en contextos académicos. Aunque reconoce el valor cultural de estas formas de expresión, identifica que pueden limitar la adecuación del registro lingüístico según la situación comunicativa. Su propósito es ampliar el repertorio lingüístico del grupo y promover el uso consciente de distintos registros sin desvalorizar sus formas de habla. Considerando la importancia de desarrollar la competencia comunicativa y la conciencia lingüística, ¿qué intervención pedagógica permitiría enriquecer el lenguaje oral y favorecer el uso pertinente de diferentes registros?", options: ["Promover una estrategia didáctica centrada en la incorporación de pautas, guías de escritura y de expresión oral, integrando momentos de planificación, producción y revisión con apoyo del docente, el uso de ejemplos, consignas estructuradas y espacios de retroalimentación para ajustar sus producciones, mejorar la coherencia y avanzar gradualmente en la mejora de la calidad de sus textos.", "Promover una estrategia didáctica centrada en la modelación de textos y discursos, proporcionando ejemplos estructurados, análisis guiados y actividades de reproducción que orienten a los estudiantes en el uso adecuado del vocabulario.", "Promover de manera progresiva una estrategia didáctica centrada en la producción frecuente de textos y discursos orales, incorporando ejercicios de práctica guiada, retroalimentación posterior y comparaciones entre distintos registros.", "Promover de manera progresiva una estrategia didáctica centrada en el acompañamiento de la construcción del discurso, integrando la planificación, la producción y la revisión mediante criterios compartidos y espacios de reflexión sobre las decisiones tomadas, de modo que los criterios compartidos orienten las decisiones."], correct: 3, justification: "La respuesta correcta es la D porque acompaña la construcción del discurso integrando planificación, producción y revisión con criterios compartidos y reflexión sobre las decisiones. Esto desarrolla la conciencia lingüística y la competencia comunicativa sin desvalorizar las formas de habla. A se centra en escritura sin trabajar la conciencia lingüística oral; B solo modela sin reflexión del estudiante; C practica pero sin profundizar en la reflexión sobre el registro." },
+                { id: 40, text: "En una clase de Ciencias Sociales del primer ciclo, el docente identifica que un estudiante presenta dificultades para comprender la secuencia temporal. Las estrategias utilizadas se han basado principalmente en la exposición oral. El docente busca una estrategia de mediación pedagógica para reestructurar los formatos de presentación de la información y las consignas. ¿Cuál adaptación pedagógica sería más pertinente?", options: ["Implementar estrategias de apoyo centradas en la incorporación de recursos visuales, ejemplos contextualizados y actividades de aplicación guiada durante el desarrollo de las tareas.", "Implementar estrategias de mediación pedagógica centradas en la adecuación de la carga y el ritmo de las actividades, ajustando la cantidad de información.", "Implementar estrategias de mediación pedagógica centradas en incorporar apoyos complementarios durante el desarrollo de las actividades, integrando recursos visuales y ejemplos guiados.", "Implementar estrategias de mediación pedagógica centradas en la reestructuración de los formatos de presentación de la información y de las consignas, incorporando segmentación de instrucciones, apoyos visuales organizados, modelado explícito y recursos multimodales que faciliten la comprensión, la anticipación y la autonomía del estudiante en el desarrollo de las tareas propuestas."], correct: 3, justification: "La respuesta correcta es la D porque reestructura los formatos de presentación de manera integral: segmenta instrucciones, incorpora apoyos visuales organizados, modelado explícito y recursos multimodales. Esto favorece la comprensión, la anticipación y la autonomía. A incorpora recursos visuales pero sin la reestructuración completa del formato; B y C son más limitadas en su alcance." }
+            ];
+
+            const POINT_PER_QUESTION = TOTAL_POINTS / questions.length;
+            const letterLabel = ['A','B','C','D'];
+
+            function formatTime(seconds) {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }
+
+            // ---------- React-like state -------------
+            let state = {
+                screen: 'start', // start | quiz | result
+                current: 0,
+                answers: Array(questions.length).fill(null),
+                selected: null,
+                revealed: false,
+                timeLeft: TOTAL_TIME,
+                flagged: Array(questions.length).fill(false),
+                timerInterval: null
+            };
+
+            let root = document.getElementById('root');
+
+            function render() {
+                root.innerHTML = renderApp();
+                attachEvents();
+            }
+
+            // ------------------------- render functions -------------------------
+            function renderApp() {
+                if (state.screen === 'start') return renderStart();
+                if (state.screen === 'result') return renderResult();
+                return renderQuiz();
+            }
+
+            function renderStart() {
+                return `
+                    <div class="start-container">
+                        <div class="start-card">
+                            <div style="font-size:48px; margin-bottom:12px;">📚</div>
+                            <h1>Simulador de Evaluación Docente</h1>
+                            <p class="sub">Sistema Educativo Dominicano · Competencias Pedagógicas</p>
+                            <div class="info-box">
+                                <div class="info-row"><span class="label">📋 Preguntas</span><span class="value">${questions.length} ítems de selección múltiple</span></div>
+                                <div class="info-row"><span class="label">⏱️ Tiempo</span><span class="value">1 hora 30 minutos</span></div>
+                                <div class="info-row"><span class="label">🏆 Puntaje total</span><span class="value">${TOTAL_POINTS} puntos</span></div>
+                                <div class="info-row"><span class="label">💡 Modalidad</span><span class="value">Con justificación de respuestas</span></div>
+                            </div>
+                            <button class="btn-primary" data-action="start">Iniciar Simulador</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderQuiz() {
+                const q = questions[state.current];
+                const progress = ((state.current + 1) / questions.length) * 100;
+                const totalAnswered = state.answers.filter(a => a !== null).length;
+                const timerColor = state.timeLeft < 300 ? '#ef4444' : state.timeLeft < 900 ? '#f59e0b' : '#10b981';
+                const isAnswered = state.answers[state.current] !== null;
+
+                let optionsHtml = q.options.map((opt, oi) => {
+                    let cls = 'opt-btn';
+                    let letterCls = 'letter';
+                    let icon = '';
+                    if (state.revealed) {
+                        if (oi === q.correct) {
+                            cls += ' revealed-correct';
+                            letterCls += ' correct';
+                            icon = '✓';
+                        } else if (oi === state.selected && oi !== q.correct) {
+                            cls += ' revealed-wrong';
+                            letterCls += ' wrong';
+                            icon = '✗';
+                        } else {
+                            cls += ' neutral';
+                        }
+                    } else {
+                        if (state.selected === oi) {
+                            cls += ' selected';
+                            letterCls += ' selected';
+                        }
+                    }
+                    const letter = icon || letterLabel[oi];
+                    return `
+                        <div class="${cls}" data-optindex="${oi}">
+                            <span class="${letterCls}">${letter}</span>
+                            <span>${opt}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                let justifyHtml = '';
+                if (state.revealed) {
+                    justifyHtml = `
+                        <div class="justification-box">
+                            <strong>💡 Justificación de la respuesta correcta:</strong>
+                            <p>${q.justification}</p>
+                        </div>
+                    `;
+                }
+
+                let confirmBtn = '';
+                if (!state.revealed) {
+                    confirmBtn = `
+                        <button class="btn-primary" data-action="confirm" ${state.selected === null ? 'disabled' : ''}>
+                            Confirmar respuesta
+                        </button>
+                    `;
+                }
+
+                const isLast = state.current === questions.length - 1;
+                const nextLabel = isLast ? 'Finalizar evaluación ✓' : 'Siguiente →';
+                const nextAction = isLast ? 'finish' : 'next';
+                const nextClass = isLast ? 'finish' : 'next';
+
+                return `
+                    <div class="header">
+                        <div class="header-inner">
+                            <div class="item-id">Ítem ${state.current + 1}<span> / ${questions.length}</span></div>
+                            <div class="timer" style="background:${timerColor}">⏱ ${formatTime(state.timeLeft)}</div>
+                            <div class="answered">${totalAnswered}/${questions.length} respondidas</div>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                    </div>
+                    <div class="app">
+                        <div class="nav-grid">
+                            ${questions.map((_, i) => {
+                                const ans = state.answers[i];
+                                let cls = 'nav-btn';
+                                if (i === state.current) cls += ' current';
+                                if (state.flagged[i]) cls += ' flagged';
+                                if (ans !== null) {
+                                    const correct = ans === questions[i].correct;
+                                    cls += correct ? ' answered-correct' : ' answered-wrong';
+                                }
+                                return `<button class="${cls}" data-nav="${i}">${i+1}</button>`;
+                            }).join('')}
+                        </div>
+                        <div class="q-card">
+                            <div class="q-header">
+                                <span class="q-badge">Ítem ${q.id} de ${questions.length}</span>
+                                <button class="flag-btn ${state.flagged[state.current] ? 'active' : ''}" data-action="flag">${state.flagged[state.current] ? '🚩 Marcada' : '⚑ Marcar'}</button>
+                            </div>
+                            <div class="q-text">${q.text}</div>
+                            ${optionsHtml}
+                            ${confirmBtn}
+                            ${justifyHtml}
+                        </div>
+                        <div class="nav-actions">
+                            <button class="prev" data-action="prev" ${state.current === 0 ? 'disabled' : ''}>← Anterior</button>
+                            <button class="${nextClass}" data-action="${nextAction}">${nextLabel}</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderResult() {
+                const score = state.answers.reduce((acc, ans, i) => {
+                    if (ans === questions[i].correct) return acc + POINT_PER_QUESTION;
+                    return acc;
+                }, 0);
+                const scoreRounded = Math.round(score * 100) / 100;
+                const pct = (scoreRounded / TOTAL_POINTS) * 100;
+                const passed = scoreRounded >= 14;
+                const correctCount = state.answers.filter((a, i) => a === questions[i].correct).length;
+
+                let itemsHtml = questions.map((q, i) => {
+                    const userAns = state.answers[i];
+                    const isCorrect = userAns === q.correct;
+                    const unanswered = userAns === null;
+                    let cls = 'review-item';
+                    if (unanswered) cls += ' unanswered';
+                    else if (isCorrect) cls += ' correct';
+                    else cls += ' wrong';
+
+                    let tag = '';
+                    if (unanswered) tag = '<span class="tag unanswered">Sin responder</span>';
+                    else if (isCorrect) tag = '<span class="tag correct">✓ Correcto</span>';
+                    else tag = '<span class="tag wrong">✗ Incorrecto</span>';
+
+                    const optHtml = q.options.map((opt, oi) => {
+                        let cls2 = 'review-opt neutral';
+                        let lbl = letterLabel[oi];
+                        if (oi === q.correct) { cls2 = 'review-opt right'; lbl += ' ✓'; }
+                        if (oi === userAns && !isCorrect) { cls2 = 'review-opt wrong'; lbl += ' ✗'; }
+                        return `<div class="${cls2}"><span class="lbl">${lbl}.</span><span>${opt}</span></div>`;
+                    }).join('');
+
+                    return `
+                        <div class="${cls}">
+                            <div class="row">
+                                <span class="qid">Ítem ${q.id}</span>
+                                ${tag}
+                            </div>
+                            <div class="qtext">${q.text}</div>
+                            ${optHtml}
+                            <div class="review-just">
+                                <strong>💡 Justificación: </strong>
+                                <span>${q.justification}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="result-container">
+                        <div class="result-card">
+                            <div style="font-size:56px; margin-bottom:8px;">${passed ? '🎉' : '📝'}</div>
+                            <h2>${passed ? '¡Evaluación aprobada!' : 'Evaluación completada'}</h2>
+                            <p class="sub">${passed ? 'Superaste el umbral de aprobación (14/20)' : 'No alcanzaste el umbral mínimo de aprobación'}</p>
+                            <div class="score-box ${passed ? '' : 'fail'}">
+                                <div class="big ${passed ? 'pass' : 'fail'}">${scoreRounded.toFixed(2)}</div>
+                                <div class="label">puntos de ${TOTAL_POINTS}</div>
+                                <div class="score-bar"><div class="fill" style="width:${pct}%; background:${passed ? '#10b981' : '#ef4444'}"></div></div>
+                                <div class="label">${correctCount} de ${questions.length} respuestas correctas</div>
+                            </div>
+                            <button class="restart-btn" data-action="restart">Volver a intentar</button>
+                        </div>
+                        <div class="review-title">Revisión detallada de respuestas</div>
+                        ${itemsHtml}
+                    </div>
+                `;
+            }
+
+            // ------------------------- event handling -------------------------
+            function attachEvents() {
+                // start
+                document.querySelectorAll('[data-action="start"]').forEach(el => {
+                    el.onclick = () => startQuiz();
+                });
+                // quiz: nav
+                document.querySelectorAll('[data-nav]').forEach(el => {
+                    el.onclick = () => {
+                        const idx = parseInt(el.dataset.nav, 10);
+                        goTo(idx);
+                    };
+                });
+                // quiz: flag
+                document.querySelectorAll('[data-action="flag"]').forEach(el => {
+                    el.onclick = () => toggleFlag();
+                });
+                // quiz: confirm
+                document.querySelectorAll('[data-action="confirm"]').forEach(el => {
+                    el.onclick = () => confirmAnswer();
+                });
+                // quiz: prev
+                document.querySelectorAll('[data-action="prev"]').forEach(el => {
+                    el.onclick = () => prevQuestion();
+                });
+                // quiz: next
+                document.querySelectorAll('[data-action="next"]').forEach(el => {
+                    el.onclick = () => nextQuestion();
+                });
+                // quiz: finish
+                document.querySelectorAll('[data-action="finish"]').forEach(el => {
+                    el.onclick = () => finishQuiz();
+                });
+                // result: restart
+                document.querySelectorAll('[data-action="restart"]').forEach(el => {
+                    el.onclick = () => restart();
+                });
+                // option selection
+                document.querySelectorAll('.opt-btn').forEach(el => {
+                    el.onclick = () => {
+                        if (state.revealed) return;
+                        const idx = parseInt(el.dataset.optindex, 10);
+                        selectOption(idx);
+                    };
+                });
+            }
+
+            // ------------------------- actions -------------------------
+            function startQuiz() {
+                clearInterval(state.timerInterval);
+                state.screen = 'quiz';
+                state.current = 0;
+                state.answers = Array(questions.length).fill(null);
+                state.flagged = Array(questions.length).fill(false);
+                state.selected = null;
+                state.revealed = false;
+                state.timeLeft = TOTAL_TIME;
+                render();
+                state.timerInterval = setInterval(() => {
+                    state.timeLeft -= 1;
+                    if (state.timeLeft <= 0) {
+                        clearInterval(state.timerInterval);
+                        state.screen = 'result';
+                        render();
+                    } else {
+                        render(); // re-render to update timer
+                    }
+                }, 1000);
+            }
+
+            function goTo(idx) {
+                state.current = idx;
+                state.selected = state.answers[idx];
+                state.revealed = state.answers[idx] !== null;
+                render();
+            }
+
+            function selectOption(idx) {
+                if (state.revealed) return;
+                state.selected = idx;
+                render();
+            }
+
+            function confirmAnswer() {
+                if (state.selected === null) return;
+                const newAnswers = [...state.answers];
+                newAnswers[state.current] = state.selected;
+                state.answers = newAnswers;
+                state.revealed = true;
+                render();
+            }
+
+            function toggleFlag() {
+                const f = [...state.flagged];
+                f[state.current] = !f[state.current];
+                state.flagged = f;
+                render();
+            }
+
+            function prevQuestion() {
+                if (state.current > 0) {
+                    goTo(state.current - 1);
+                }
+            }
+
+            function nextQuestion() {
+                if (state.current < questions.length - 1) {
+                    goTo(state.current + 1);
+                }
+            }
+
+            function finishQuiz() {
+                clearInterval(state.timerInterval);
+                state.screen = 'result';
+                render();
+            }
+
+            function restart() {
+                clearInterval(state.timerInterval);
+                state.screen = 'start';
+                render();
+            }
+
+            // initial render
+            render();
+        })();
+		})
+    </script>
+</body>
+</html>
